@@ -18,6 +18,8 @@ function App() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
   }, [notes]);
 
+
+
   const addNote = (note) => {
     setNotes(prevNotes => [{
       id: Date.now(),
@@ -123,16 +125,13 @@ function App() {
   );
 }
 
+
+
 function NoteEditor({ note, onSave, onCancel }) {
   const [title, setTitle] = useState(note?.title || '');
   const [content, setContent] = useState(note?.content || '');
   const [color, setColor] = useState(note?.color || '#ffffff');
 
-  const titleRef=useRef(null)
-
-  if (titleRef.current){
-    titleRef.current.focus();
-  }
 
   const colors = [
     '#ffffff', '#f28b82', '#fbbc04', '#fff475',
@@ -153,7 +152,6 @@ function NoteEditor({ note, onSave, onCancel }) {
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-4">
       <input
-        ref={titleRef}
         type="text"
         placeholder="Title"
         value={title}
