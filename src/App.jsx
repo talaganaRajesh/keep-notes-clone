@@ -1,5 +1,5 @@
 // App.jsx
-import { useState, useEffect,useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search, Pin, Trash2, Github } from 'lucide-react';
 import './App.css';
 
@@ -58,9 +58,12 @@ function App() {
     });
   };
 
+
+
   const filteredNotes = notes.filter(note =>
     note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    note.content.toLowerCase().includes(searchQuery.toLowerCase())
+    note.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    note.lastModified.includes(searchQuery)
   );
 
   return (
