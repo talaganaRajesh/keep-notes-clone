@@ -206,7 +206,7 @@ function HomePage() {
 
                 <div className='flex justify-center gap-4'>
                   <Link to="/login">
-                    <button className='bg-white text-black rounded-3xl px-6 py-2 md:hover:bg-orange-100 transition-all font-semibold'>Login</button>
+                    <button className='bg-white text-black rounded-3xl px-6 py-2 md:hover:bg-orange-100 transition-all font-semibold'>Login </button>
                   </Link>
                   <a className='bg-white text-black p-2 hover:animate-none md:hover:rotate-12 rounded-full cursor-pointer transition-all' target='_blank' href='https://github.com/talaganaRajesh'><Github /></a>
                 </div>
