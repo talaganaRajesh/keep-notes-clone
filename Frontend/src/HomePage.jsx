@@ -1,13 +1,88 @@
 // App.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Search, Pin, Trash2, Github } from 'lucide-react';
 import './App.css';
+
+import { auth } from './firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+
 
 import { Link } from 'react-router-dom';
 
 const STORAGE_KEY = 'keepNotes';
 
+
+import { Dock, DockIcon } from "@/components/ui/dock";
+import { motion, AnimatePresence } from "framer-motion";
+
+
+
 function HomePage() {
+
+
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+
+  const handleSignOut = async () => {
+
+    const confirm = window.confirm("Are you sure you want to log out?");
+
+    if (!confirm) {
+      return;
+    }
+    try {
+      await signOut(auth);
+
+    }
+    catch (error) {
+      console.log("error in signout");
+    }
+  };
+
+  const [userIcon, setUserIcon] = useState(null);
+
+  useEffect(() => {
+    if (user) {
+      setUserIcon(user.displayName[0].toUpperCase());
+    }
+  })
+
+
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null); // Ref for the menu
+
+  // Toggle menu visibility
+  const toggleMenu = () => {
+    setIsMenuOpen((prev) => !prev);
+  };
+
+  // Close the menu if clicked outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+
+
   const [notes, setNotes] = useState(() => {
     const savedNotes = localStorage.getItem(STORAGE_KEY);
     return savedNotes ? JSON.parse(savedNotes) : [];
@@ -74,27 +149,75 @@ function HomePage() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/">
-                <h1 className="text-xl cursor-pointer text-white font-bold">Keep <span className='text-yellow-500'>Notes</span></h1>            
+              <h1 className="md:text-xl text-sm cursor-pointer text-white font-bold">Keep <span className='text-yellow-500'>Notes</span></h1>
             </Link>
-            <div className="w-80 self-center">
+            <div className="md:w-80 w-32 self-center">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   type="text"
                   placeholder="Search notes..."
-                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  className="w-full pl-10 pr-4 md:py-2 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
             </div>
 
+
             <div className='flex justify-center gap-4'>
-                <Link to="/login">
-                    <button className='bg-white text-black rounded-3xl px-6 py-2 md:hover:bg-orange-100 transition-all font-semibold'>Login</button>                
-                </Link>
-              <a className='bg-white text-black p-2 hover:animate-none md:hover:rotate-12 rounded-full cursor-pointer transition-all' target='_blank' href='https://github.com/talaganaRajesh'><Github /></a>
+
+              {user ? (
+                <div className='relative' ref={menuRef}>
+
+                  <button
+                    onClick={toggleMenu}
+
+                    className='bg-yellow-500 text-black rounded-full size-10 md:hover:bg-yellow-600 transition-all font-semibold'
+                  >
+                    {userIcon}
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  <AnimatePresence>
+                    {isMenuOpen && (
+                      <motion.div
+                        className="absolute right-0 mt-2 w-48 bg-white border border-gray-300 rounded-lg shadow-lg z-10"
+                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <ul className="py-2 px-1 bg-amber-50 rounded-xl">
+                          <li className="px-4 py-2  rounded-2xl mb-1 hover:bg-amber-100 transition-all font-semibold cursor-pointer">
+                            <Link to="/login">Change Account</Link>
+                          </li>
+                          <li className="px-4 py-2 rounded-2xl hover:bg-amber-100 transition-all font-semibold cursor-pointer" onClick={handleSignOut}>
+                            Log Out
+                          </li>
+                        </ul>
+                      </motion.div>
+                    )}
+
+                  </AnimatePresence>
+
+                </div>
+              ) : (
+
+                <div className='flex justify-center gap-4'>
+                  <Link to="/login">
+                    <button className='bg-white text-black rounded-3xl px-6 py-2 md:hover:bg-orange-100 transition-all font-semibold'>Login</button>
+                  </Link>
+                  <a className='bg-white text-black p-2 hover:animate-none md:hover:rotate-12 rounded-full cursor-pointer transition-all' target='_blank' href='https://github.com/talaganaRajesh'><Github /></a>
+                </div>
+
+              )}
+
+
+
             </div>
+
+
           </div>
         </div>
       </header>
@@ -148,8 +271,7 @@ function NoteEditor({ note, onSave, onCancel }) {
 
   const colors = [
     '#ffffff', '#f28b82', '#fbbc04', '#fff475',
-    '#ccff90', '#a7ffeb', '#cbf0f8', '#aecbfa',
-    '#d7aefb', '#fdcfe8', '#e6c9a8', '#e8eaed'
+    '#ccff90', '#a7ffeb'
   ];
 
   const handleSubmit = (e) => {
@@ -177,19 +299,25 @@ function NoteEditor({ note, onSave, onCancel }) {
         onChange={(e) => setContent(e.target.value)}
         className="w-full p-2 border-none focus:outline-none resize-none min-h-[200px]"
       />
-      <div className="flex justify-between items-center mt-4">
-        <div className="flex gap-2">
-          {colors.map(c => (
-            <button
-              key={c}
-              type="button"
-              className={`w-6 h-6 rounded-full border ${color === c ? 'ring-2 ring-yellow-500' : ''}`}
-              style={{ backgroundColor: c }}
-              onClick={() => setColor(c)}
-            />
-          ))}
+      <div className="flex justify-center h-40 md:h-0 items-center mt-4 relative">
+        <div className='absolute bottom-28 md:bottom-0' >
+          <Dock direction="middle" className="grid grid-cols-3 md:grid-cols-6">
+            {colors.map(c => (
+              <DockIcon className="bg-red-50 flex justify-center items-center">
+
+                <button
+                  key={c}
+                  type="button"
+                  className={`w-6 h-6 rounded-full border ${color === c ? 'ring-2 ring-yellow-500' : ''}`}
+                  style={{ backgroundColor: c }}
+                  onClick={() => setColor(c)}
+                />
+              </DockIcon>
+
+            ))}
+          </Dock>
         </div>
-        <div className="flex gap-2">
+        <div className=" gap-2 md:bottom-2 bottom-0 right-0 absolute">
           <button
             type="button"
             onClick={onCancel}
@@ -235,7 +363,7 @@ function Note({ note, onUpdate, onDelete, onPin }) {
     <div
       className="rounded-lg shadow p-4 break-words cursor-pointer hover:shadow-lg transition-all"
       style={{ backgroundColor: note.color }}
-      // onClick={() => setIsEditing(true)}
+    // onClick={() => setIsEditing(true)}
 
     >
       <div className="flex justify-between items-start mb-2">
